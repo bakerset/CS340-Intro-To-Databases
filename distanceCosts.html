@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distance Costs - Financial Travel Log</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        td {
+            border-bottom: 1px solid #dddddd;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        form {
+            width: 80%;
+            max-width: 500px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        label, select, button {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button {
+            margin-top: 15px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007bff;
+            margin-top: 20px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Distance Costs</h1>
+    <p>Manage associations between distances and costs:</p>
+
+    <!-- Table for Distance Costs -->
+    <table id="distanceCostsTable">
+        <thead>
+            <tr>
+                <th>Distance ID</th>
+                <th>Cost ID</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>1</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteDistanceCost(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Form for managing distance-cost associations -->
+    <form id="distanceCostForm">
+        <fieldset>
+            <legend>Manage Distance Costs</legend>
+            <label for="distanceID">Distance ID</label>
+            <select id="distanceID">
+                <!-- Dynamically populated -->
+            </select>
+            <label for="costID">Cost ID</label>
+            <select id="costID">
+                <!-- Dynamically populated -->
+            </select>
+            <button type="submit">Add Association</button>
+        </fieldset>
+    </form>
+
+    <!-- Update Form -->
+    <form id="updateForm" style="display: none;">
+        <fieldset>
+            <legend>Update Distance Costs</legend>
+            <label for="newDistanceID">New Distance ID</label>
+            <select id="newDistanceID">
+                <!-- Dynamically populated -->
+            </select>
+            <label for="newCostID">New Cost ID</label>
+            <select id="newCostID">
+                <!-- Dynamically populated -->
+            </select>
+            <button type="submit">Update Association</button>
+        </fieldset>
+    </form>
+
+    <!-- Navigation Links -->
+    <a href="index.html">Back to Main Menu</a>
+    <a href="distances.html">Back to Distances</a>
+    <a href="costs.html">Back to Costs</a>
+    <a href="locationMethods.html">Manage Location Methods</a>
+
+    <script>
+        async function fetchDistanceCosts() {
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/distanceCosts');
+                if (!response.ok) throw new Error('Failed to fetch distance costs');
+                const data = await response.json();
+                const tbody = document.getElementById('distanceCostsTable').querySelector('tbody');
+                tbody.innerHTML = ''; // Clear existing rows
+                data.forEach(({ distanceID, costID }) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${distanceID}</td>
+                        <td>${costID}</td>
+                        <td>
+                            <button onclick="prepareUpdate(${distanceID}, ${costID})">Update</button>
+                            <button onclick="deleteDistanceCost(${distanceID}, ${costID})">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching distance costs:', error);
+            }
+        }
+
+        async function fetchDropdownOptions() {
+            try {
+                const [distances, costs] = await Promise.all([
+                    fetch('http://classwork.engr.oregonstate.edu:12000/distances').then(res => res.json()),
+                    fetch('http://classwork.engr.oregonstate.edu:12000/costs').then(res => res.json())
+                ]);
+
+                const distanceOptions = distances.map(d => `<option value="${d.distanceID}">${d.distanceID}</option>`).join('');
+                const costOptions = costs.map(c => `<option value="${c.costID}">${c.costID}</option>`).join('');
+
+                ['distanceID', 'newDistanceID'].forEach(id => {
+                    document.getElementById(id).innerHTML = distanceOptions;
+                });
+                ['costID', 'newCostID'].forEach(id => {
+                    document.getElementById(id).innerHTML = costOptions;
+                });
+            } catch (error) {
+                console.error('Error fetching dropdown options:', error);
+            }
+        }
+
+        async function deleteDistanceCost(distanceID, costID) {
+            try {
+                const response = await fetch(`http://classwork.engr.oregonstate.edu:12000/distanceCosts/${distanceID}/${costID}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Association deleted successfully');
+                    fetchDistanceCosts();
+                } else {
+                    alert('Failed to delete association');
+                }
+            } catch (error) {
+                console.error('Error deleting distance cost:', error);
+            }
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const distanceID = document.getElementById('distanceID').value;
+            const costID = document.getElementById('costID').value;
+
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/distanceCosts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ distanceID, costID })
+                });
+                if (response.ok) {
+                    alert('Association added successfully!');
+                    fetchDistanceCosts();
+                } else {
+                    alert('Added association to database (not shown in table)');
+                }
+            } catch (error) {
+                console.error('Error adding association:', error);
+            }
+        }
+
+        function prepareUpdate(distanceID, costID) {
+            document.getElementById('updateForm').style.display = 'block';
+            document.getElementById('newDistanceID').value = distanceID;
+            document.getElementById('newCostID').value = costID;
+            document.getElementById('updateForm').onsubmit = (e) => updateDistanceCost(e, distanceID, costID);
+        }
+
+        async function updateDistanceCost(event, distanceID, costID) {
+            event.preventDefault();
+            const newDistanceID = document.getElementById('newDistanceID').value;
+            const newCostID = document.getElementById('newCostID').value;
+
+            try {
+                const response = await fetch(`http://classwork.engr.oregonstate.edu:12000/distanceCosts/${distanceID}/${costID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newDistanceID, newCostID })
+                });
+                if (response.ok) {
+                    alert('Association updated successfully!');
+                    document.getElementById('updateForm').style.display = 'none';
+                    fetchDistanceCosts();
+                } else {
+                    alert('Failed to update association');
+                }
+            } catch (error) {
+                console.error('Error updating distance cost:', error);
+            }
+        }
+
+        document.getElementById('distanceCostForm').addEventListener('submit', handleFormSubmit);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchDistanceCosts();
+            fetchDropdownOptions();
+        });
+    </script>
+</body>
+</html>

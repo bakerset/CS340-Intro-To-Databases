@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Costs - Financial Travel Log</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        p {
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        form {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        input[type="number"], input[type="text"] {
+            padding: 8px;
+            margin: 8px;
+            width: 200px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        input[type="submit"], button {
+            padding: 10px 15px;
+            background-color: #007BFF; 
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover, button:hover {
+            background-color: #0056b3;
+        }
+
+        .delete-btn, .update-btn {
+            padding: 5px 10px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background-color: #ff4d4d;
+        }
+
+        .update-btn {
+            background-color: #28a745;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Costs</h1>
+    <p>List of trip expenses:</p>
+
+    <!-- Table to Display Costs -->
+    <table id="costsTable">
+        <thead>
+            <tr>
+                <th>Cost ID</th>
+                <th>Total Cost</th>
+                <th>Currency</th>
+                <th>User ID</th>
+                <th>Distance ID</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>300</td>
+            <td>1</td>
+            <td>2</td>
+            <td>
+                <button class="delete-btn" onclick="deleteDistance(this)">Delete</button>
+                <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+            </td>
+        </tr>
+    </tbody>
+    </table>
+    
+    <!-- Form to Add or Update Cost -->
+    <form id="costForm">
+        <h3 id="formTitle">Add a New Cost</h3>
+        <input type="number" id="costId" placeholder="Cost ID" required>
+        <input type="number" id="totalCost" placeholder="Total Cost" required>
+        <input type="text" id="currency" placeholder="Currency" required>
+        <input type="number" id="userId" placeholder="User ID" required>
+        <input type="number" id="distanceId" placeholder="Distance ID" required>
+        <input type="submit" value="Submit">
+    </form>
+
+    <!-- Back to Main Menu Link -->
+    <a href="index.html">Back to Main Menu</a>
+    <a href="distanceCosts.html">Manage Distance Costs</a>
+
+    <script>
+        let updateMode = false;
+
+        // Fetch and display costs from the database
+        async function fetchCosts() {
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/costs');
+                const costs = await response.json();
+                const costsTable = document.getElementById('costsTable').getElementsByTagName('tbody')[0];
+                costsTable.innerHTML = ''; // Clear existing table rows
+
+                costs.forEach(cost => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${cost.costID}</td>
+                        <td>${cost.totalCost}</td>
+                        <td>${cost.currency}</td>
+                        <td>${cost.userID}</td>
+                        <td>${cost.distanceID}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteCost(${cost.costID})">Delete</button>
+                            <button class="update-btn" onclick="prepareUpdate(${cost.costID})">Update</button>
+                        </td>
+                    `;
+                    costsTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching costs:', error);
+            }
+        }
+
+        // Handle form submission for Add/Update
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const costId = document.getElementById('costId').value;
+            const totalCost = document.getElementById('totalCost').value;
+            const currency = document.getElementById('currency').value;
+            const userId = document.getElementById('userId').value;
+            const distanceId = document.getElementById('distanceId').value;
+
+            if (!costId || !totalCost || !currency || !userId || !distanceId) {
+                alert('Please fill in all fields.');
+                return;
+            }
+
+            const payload = {
+                totalCost,
+                currency,
+                userID: userId,
+                distanceID: distanceId,
+            };
+
+            try {
+                const method = updateMode ? 'PUT' : 'POST';
+                const url = updateMode
+                    ? `http://classwork.engr.oregonstate.edu:12000/costs/${costId}`
+                    : 'http://classwork.engr.oregonstate.edu:12000/costs';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                    alert(updateMode ? 'Cost updated successfully!' : 'Cost added successfully!');
+                    fetchCosts(); // Refresh costs table
+                    resetForm(); // Reset form after submission
+                } else {
+                    console.error('Error saving cost:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Delete a cost
+        async function deleteCost(costId) {
+            try {
+                const response = await fetch(`http://classwork.engr.oregonstate.edu:12000/costs/${costId}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    alert('Cost deleted successfully!');
+                    fetchCosts(); // Refresh costs table
+                } else {
+                    console.error('Error deleting cost:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Prepare to update a cost
+        function prepareUpdate(costId) {
+            updateMode = true;
+            document.getElementById('formTitle').textContent = 'Update Cost';
+
+            fetch(`http://classwork.engr.oregonstate.edu:12000/costs/${costId}`)
+                .then(response => response.json())
+                .then(cost => {
+                    document.getElementById('costId').value = cost.costID;
+                    document.getElementById('totalCost').value = cost.totalCost;
+                    document.getElementById('currency').value = cost.currency;
+                    document.getElementById('userId').value = cost.userID;
+                    document.getElementById('distanceId').value = cost.distanceID;
+                });
+        }
+
+        // Reset form after add/update
+        function resetForm() {
+            updateMode = false;
+            document.getElementById('costForm').reset();
+            document.getElementById('formTitle').textContent = 'Add a New Cost';
+        }
+
+        // Fetch costs on page load
+        document.addEventListener('DOMContentLoaded', fetchCosts);
+
+        // Handle form submission
+        document.getElementById('costForm').addEventListener('submit', handleFormSubmit);
+    </script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Methods - Financial Travel Log</title>
+
+    <!-- Styling the page -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        p {
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        form {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 8px;
+            margin: 8px;
+            width: 200px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        input[type="submit"] {
+            padding: 10px 15px;
+            background-color: #007BFF; 
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        .delete-btn, .update-btn {
+            padding: 5px 10px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background-color: #ff4d4d;
+        }
+
+        .update-btn {
+            background-color: #28a745;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<h1>Methods</h1>
+    <p>List of transportation methods:</p>
+
+    <!-- Table to Display Transportation Methods -->
+    <table id="methodsTable">
+        <tr>
+            <th>Method ID</th>
+            <th>Car Transport</th>
+            <th>Plane Transport</th>
+            <th>Train Transport</th>
+            <th>Walking Distance</th>
+            <th>User ID</th>
+            <th>Location ID</th>
+            <th>Action</th>
+        </tr>
+    </table>
+
+    <!-- Form to Add or Update Method -->
+    <form id="methodForm">
+        <h3 id="formTitle">Add a New Transportation Method</h3>
+        <!-- Hidden input for methodID in case of update -->
+        <input type="hidden" id="methodID">
+        <label for="carTransport">Car Transport:</label>
+        <input type="text" id="carTransport" placeholder="Car Transport">
+    
+        <label for="planeTransport">Plane Transport:</label>
+        <input type="text" id="planeTransport" placeholder="Plane Transport">
+    
+        <label for="trainTransport">Train Transport:</label>
+        <input type="text" id="trainTransport" placeholder="Train Transport">
+    
+        <label for="walkingDistance">Walking Distance (km):</label>
+        <input type="number" id="walkingDistance" placeholder="Walking Distance (km)" required>
+    
+        <label for="userID">User ID:</label>
+        <input type="number" id="userID" placeholder="User ID" required>
+    
+        <label for="locationID">Location ID:</label>
+        <input type="number" id="locationID" placeholder="Location ID" required>
+    
+        <input type="submit" value="Submit">
+    </form>
+
+    <!-- Back to Main Menu Link -->
+    <a href="index.html">Back to Main Menu</a>
+
+    <!-- JavaScript to Handle Form and Table Update -->
+    <script>
+        let updateMode = false;
+        let updateRow = null;
+    
+        // Fetch methods from the server and display them
+        async function fetchMethods() {
+            const table = document.getElementById('methodsTable');
+            table.innerHTML = `
+                <tr>
+                    <th>Method ID</th>
+                    <th>Car Transport</th>
+                    <th>Plane Transport</th>
+                    <th>Train Transport</th>
+                    <th>Walking Distance</th>
+                    <th>User ID</th>
+                    <th>Location ID</th>
+                    <th>Action</th>
+                </tr>`;
+    
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/methods');
+                const methods = await response.json();
+    
+                methods.forEach(method => {
+                    const row = table.insertRow();
+                    row.innerHTML = `
+                        <td>${method.methodID}</td>
+                        <td>${method.carTransport || 'Null'}</td>
+                        <td>${method.planeTransport || 'Null'}</td>
+                        <td>${method.trainTransport || 'Null'}</td>
+                        <td>${method.walkingDistance}</td>
+                        <td>${method.userID}</td>
+                        <td>${method.locationID}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteMethod(${method.methodID})">Delete</button>
+                            <button class="update-btn" onclick="prepareUpdate(${method.methodID})">Update</button>
+                        </td>`;
+                });
+            } catch (error) {
+                console.error('Error fetching methods:', error);
+            }
+        }
+    
+        // Prepare for updating method
+        async function prepareUpdate(methodID) {
+            updateMode = true;
+            document.getElementById('formTitle').textContent = 'Update Method Information';
+    
+            // Set methodID hidden field for updates
+            document.getElementById('methodID').value = methodID;
+    
+            try {
+                const response = await fetch(`http://classwork.engr.oregonstate.edu:12000/methods/${methodID}`);
+                const method = await response.json();
+                document.getElementById('carTransport').value = method.carTransport || '';
+                document.getElementById('planeTransport').value = method.planeTransport || '';
+                document.getElementById('trainTransport').value = method.trainTransport || '';
+                document.getElementById('walkingDistance').value = method.walkingDistance || '';
+                document.getElementById('userID').value = method.userID || '';
+                document.getElementById('locationID').value = method.locationID || '';
+            } catch (error) {
+                console.error('Error fetching method for update:', error);
+            }
+        }
+    
+        // Handle form submission (Add/Update method)
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+    
+            const methodID = document.getElementById('methodID').value;
+            const carTransport = document.getElementById('carTransport').value;
+            const planeTransport = document.getElementById('planeTransport').value;
+            const trainTransport = document.getElementById('trainTransport').value;
+            const walkingDistance = document.getElementById('walkingDistance').value;
+            const userID = document.getElementById('userID').value;
+            const locationID = document.getElementById('locationID').value;
+    
+            // Validation for userID (ensure it's a number and not empty)
+            if (!userID || isNaN(userID) || userID <= 0) {
+                alert("Please enter a valid User ID.");
+                return;
+            }
+    
+            const methodData = {
+                carTransport: carTransport,
+                planeTransport: planeTransport,
+                trainTransport: trainTransport,
+                walkingDistance: walkingDistance,
+                userID: userID,
+                locationID: locationID
+            };
+    
+            try {
+                const url = updateMode
+                    ? `http://classwork.engr.oregonstate.edu:12000/methods/${methodID}`
+                    : 'http://classwork.engr.oregonstate.edu:12000/methods';
+                const methodType = updateMode ? 'PUT' : 'POST';
+    
+                const response = await fetch(url, {
+                    method: methodType,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(methodData),
+                });
+    
+                if (response.ok) {
+                    alert(updateMode ? 'Method updated successfully' : 'Method added successfully');
+                    fetchMethods();  // Re-fetch updated list
+                    resetForm();  // Reset form after submit
+                } else {
+                    const errorData = await response.text();
+                    console.error(`Error saving method. Status: ${response.status}, Message: ${errorData}`);
+                    alert('Error saving method');
+                }
+            } catch (error) {
+                console.error('Error saving method:', error);
+            }
+        }
+    
+        // Delete method by ID
+        async function deleteMethod(methodID) {
+            if (confirm('Are you sure you want to delete this method?')) {
+                try {
+                    const response = await fetch(`http://classwork.engr.oregonstate.edu:12000/methods/${methodID}`, {
+                        method: 'DELETE',
+                    });
+    
+                    if (response.ok) {
+                        alert('Method deleted successfully');
+                        fetchMethods();  // Re-fetch updated list
+                    } else {
+                        alert('Error deleting method');
+                    }
+                } catch (error) {
+                    console.error('Error deleting method:', error);
+                }
+            }
+        }
+    
+        // Reset form fields
+        function resetForm() {
+            updateMode = false;
+            document.getElementById('methodForm').reset();
+            document.getElementById('formTitle').textContent = 'Add a New Method';
+        }
+    
+        // Fetch methods when the page is loaded
+        document.addEventListener('DOMContentLoaded', fetchMethods);
+    
+        // Handle form submission
+        document.getElementById('methodForm').addEventListener('submit', handleFormSubmit);
+    </script>
+</body>
+</html>

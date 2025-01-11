@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Methods</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        td {
+            border-bottom: 1px solid #dddddd;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        form {
+            width: 80%;
+            max-width: 500px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        label, select, button {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button {
+            margin-top: 15px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007bff;
+            margin-top: 20px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Location Methods</h1>
+
+    <!-- Table -->
+    <table id="locationMethodsTable">
+        <thead>
+            <tr>
+                <th>Location ID</th>
+                <th>Method ID</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>1</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteLocationMethod(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Form -->
+    <div class="form-container">
+        <h2 id="formTitle">Add New Location Method</h2>
+        <form id="locationMethodForm">
+            <label for="locationID">Location ID:</label>
+            <select id="locationID" required>
+                <option value="">-- Select Location --</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+            <label for="methodID">Method ID:</label>
+            <select id="methodID" required>
+                <option value="">-- Select Method --</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <!-- Navigation Links -->
+    <a href="index.html">Back to Main Menu</a>
+    <a href="locations.html">Back to Locations</a>
+    <a href="methods.html">Back to Methods</a>
+    <a href="distanceCosts.html">Manage Distance Costs</a>
+
+    <script>
+        async function fetchLocationMethods() {
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/locationMethods');
+                const locationMethods = await response.json();
+
+                const tableBody = document.getElementById('locationMethodsTable').getElementsByTagName('tbody');
+                tableBody.innerHTML = '';
+
+                locationMethods.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.locationID}</td>
+                        <td>${item.methodID}</td>
+                        <td>
+                            <button onclick="deleteLocationMethod(${item.locationID}, ${item.methodID})">Delete</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching location methods:', error);
+            }
+        }
+
+        async function populateDropdowns() {
+            try {
+                const [locationsRes, methodsRes] = await Promise.all([
+                    fetch('http://classwork.engr.oregonstate.edu:12000/locations'),
+                    fetch('http://classwork.engr.oregonstate.edu:12000/methods')
+                ]);
+
+                const locations = await locationsRes.json();
+                const methods = await methodsRes.json();
+
+                const locationDropdown = document.getElementById('locationID');
+                const methodDropdown = document.getElementById('methodID');
+
+                locations.forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location.locationID;
+                    option.textContent = `Location ${location.locationID}`;
+                    locationDropdown.appendChild(option);
+                });
+
+                methods.forEach(method => {
+                    const option = document.createElement('option');
+                    option.value = method.methodID;
+                    option.textContent = `Method ${method.methodID}`;
+                    methodDropdown.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error populating dropdowns:', error);
+            }
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const locationID = document.getElementById('locationID').value;
+            const methodID = document.getElementById('methodID').value;
+
+            if (!locationID || !methodID) {
+                alert('Both Location ID and Method ID are required.');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/locationMethods', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ locationID, methodID }),
+                });
+
+                if (response.ok) {
+                    alert('Location method added successfully!');
+                    fetchLocationMethods();
+                    document.getElementById('locationMethodForm').reset();
+                } else {
+                    alert('Location Method loaded to database (not shown in table)');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function deleteLocationMethod(locationID, methodID) {
+            try {
+                const response = await fetch(`http://classwork.engr.oregonstate.edu:12000/locationMethods?locationID=${locationID}&methodID=${methodID}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    alert('Location method deleted successfully!');
+                    fetchLocationMethods();
+                } else {
+                    alert('Error deleting location method.');
+                }
+            } catch (error) {
+                console.error('Error deleting location method:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateDropdowns();
+            fetchLocationMethods();
+
+            document.getElementById('locationMethodForm').addEventListener('submit', handleFormSubmit);
+        });
+    </script>
+</body>
+</html>

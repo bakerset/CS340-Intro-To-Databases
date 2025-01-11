@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distances - Financial Travel Log</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        p {
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        form {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        input[type="number"], input[type="text"] {
+            padding: 8px;
+            margin: 8px;
+            width: 200px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        input[type="submit"], button {
+            padding: 10px 15px;
+            background-color: #007BFF; 
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover, button:hover {
+            background-color: #0056b3;
+        }
+
+        .delete-btn, .update-btn {
+            padding: 5px 10px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background-color: #ff4d4d;
+        }
+
+        .update-btn {
+            background-color: #28a745;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Distances</h1>
+    <p>List of distances traveled:</p>
+
+    <!-- Table of distances -->
+    <table id="distancesTable">
+        <thead>
+            <tr>
+                <th>Distance ID</th>
+                <th>Distance Traveled (miles)</th>
+                <th>Travel ID</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>200</td>
+                <td>1</td>
+                <td>1</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteDistance(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>300</td>
+                <td>2</td>
+                <td>2</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteDistance(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>1000</td>
+                <td>3</td>
+                <td>3</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteDistance(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+        <!-- Form to Add or Update Distance -->
+    <form id="distanceForm">
+        <!-- Distance ID (Read-only and Auto-Generated) -->
+        <label for="distanceID">Distance ID:</label>
+        <input type="number" id="distanceID" placeholder="Auto-Generated" readonly>
+
+        <!-- Distance Traveled -->
+        <label for="distanceTraveled">Distance Traveled:</label>
+        <input type="number" id="distanceTraveled" placeholder="Enter Distance Traveled" required>
+
+        <!-- Travel ID Dropdown -->
+        <label for="travelID">Travel ID:</label>
+        <input type="number" id="travelID" placeholder="Enter Travel ID" required>
+        <!-- Text input for custom value, hidden by default -->
+        <input type="submit" value="Submit">
+    </form>
+
+    <!-- Navigation Links -->
+    <a href="index.html">Back to Main Menu</a>
+    <a href="distanceCosts.html">Manage Distance Costs</a>
+    <a href="locationMethods.html">Manage Location Methods</a>
+
+    <script>
+        let updateMode = false;
+        let currentDistanceId = null;
+
+        // Fetch distances and populate the table
+        async function fetchDistances() {
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/distances');
+                const distances = await response.json();
+                const distancesTable = document.getElementById('distancesTable').getElementsByTagName('tbody')[0];
+                distancesTable.innerHTML = ''; // Clear current table data
+
+                distances.forEach(distance => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${distance.distanceID}</td>
+                        <td>${distance.distanceTraveled}</td>
+                        <td>${distance.travelID}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteDistance(${distance.distanceID})">Delete</button>
+                            <button class="update-btn" onclick="prepareUpdate(${distance.distanceID})">Update</button>
+                        </td>
+                    `;
+                    distancesTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching distances:', error);
+            }
+        }
+
+        async function populateTravelIDDropdown() {
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/travels');
+                if (!response.ok) throw new Error('Failed to fetch travels');
+                const travels = await response.json();
+                const dropdown = document.getElementById('travelID');
+                dropdown.innerHTML = '<option value="">-- None --</option>';
+                travels.forEach(travel => {
+                    const option = document.createElement('option');
+                    option.value = travel.travelID;
+                    option.textContent = `${travel.travelID} - ${travel.description || 'No Description'}`;
+                    dropdown.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error fetching travel IDs:', error);
+            }
+        }
+
+        // Delete a distance
+        async function deleteDistance(distanceID) {
+            try {
+                const response = await fetch(`http://classwork.engr.oregonstate.edu:12000/distances/${distanceID}`, {
+                    method: 'DELETE',
+                });
+                if (response.ok) {
+                    alert('Distance deleted successfully!');
+                    fetchDistances(); // Refresh the distances table
+                } else {
+                    alert('Failed to delete distance');
+                }
+            } catch (error) {
+                console.error('Error deleting distance:', error);
+            }
+        }
+
+        // Prepare form for updating a distance
+        function prepareUpdate(distanceID) {
+            updateMode = true;
+            document.getElementById('formTitle').textContent = 'Update Distance Information';
+
+            fetch(`http://classwork.engr.oregonstate.edu:12000/distances/${distanceID}`)
+                .then(response => response.json())
+                .then(distance => {
+                    document.getElementById('distanceID').value = distance.distanceID;
+                    document.getElementById('distanceTraveled').value = distance.distanceTraveled;
+                    document.getElementById('travelID').value = distance.travelID;
+                });
+        }
+
+        // Handle form submit
+        async function handleFormSubmit(event) {
+            event.preventDefault(); // Prevent form submission
+
+            const distanceID = document.getElementById('distanceID').value;
+            const distanceTraveled = document.getElementById('distanceTraveled').value;
+            const travelID = document.getElementById('travelID').value || none;
+
+            const payload = {
+                distance_traveled: distanceTraveled,
+                travel_id: travelID
+            };
+
+            try {
+                const method = updateMode ? 'PUT' : 'POST';
+                const url = updateMode
+                    ? `http://classwork.engr.oregonstate.edu:12000/distances/${distanceID}`
+                    : 'http://classwork.engr.oregonstate.edu:12000/distances';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                    alert(updateMode ? 'Distance updated successfully!' : 'Distance added successfully!');
+                    fetchDistances(); // Refresh the distances table
+                    resetForm(); // Reset form after submission
+                } else {
+                    console.error('Error saving distance:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Reset form fields
+        function resetForm() {
+            updateMode = false;
+            currentDistanceId = null;
+            document.getElementById('distanceForm').reset();
+            document.getElementById('formTitle').textContent = 'Add a New Distance';
+        }
+
+        // Fetch distances on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            populateTravelIDDropdown();
+            fetchDistances();
+        });
+
+        // Handle form submission
+        document.getElementById('distanceForm').addEventListener('submit', handleFormSubmit);
+
+    </script>
+</body>
+</html>

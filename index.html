@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Travel Log - Main Menu</title>
+    <style>
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Center Content */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+        }
+
+        /* Main Container */
+        .container, .login-container {
+            text-align: center;
+            max-width: 700px;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Title and Intro */
+        h1 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 1rem;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        /* Links and Descriptions */
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            background-color: #fafafa;
+            transition: box-shadow 0.3s ease;
+        }
+
+        li:hover {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        a {
+            font-size: 1.2rem;
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        a:hover {
+            color: #0056b3;
+        }
+
+        .description {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Login/Registration Styles */
+        .form-group {
+            margin: 15px 0;
+            text-align: left;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login and Registration Container -->
+    <div class="login-container" id="login-container">
+        <h1>Login to Financial Travel Log</h1>
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" required>
+        </div>
+        <button onclick="login()">Login</button>
+        <p>New user? <button onclick="register()">Register</button></p>
+    </div>
+
+    <!-- Main Menu Container -->
+    <div class="container" id="main-container" style="display: none;">
+        <h1>Financial Travel Log</h1>
+        <p>Welcome to the Financial Travel Log. Use the links below to navigate through the different sections of the site.</p>
+
+        <ul>
+            <li>
+                <a href="users.html">Users</a>
+                <p class="description">Manage user profiles and budget information.</p>
+            </li>
+            <li>
+                <a href="distances.html">Distances</a>
+                <p class="description">Log and view distances traveled for each trip.</p>
+            </li>
+            <li>
+                <a href="costs.html">Costs</a>
+                <p class="description">Record and track expenses for each trip, including total cost and currency.</p>
+            </li>
+            <li>
+                <a href="locations.html">Locations</a>
+                <p class="description">Add and view travel destinations, including domestic and international locations.</p>
+            </li>
+            <li>
+                <a href="methods.html">Methods</a>
+                <p class="description">Specify the mode of transportation used for each trip (e.g., car, plane, train).</p>
+            </li>
+            <li>
+                <a href="distanceCosts.html">Distance Costs</a>
+                <p class="description">Manage intersection between the costs of distance traveled.</p>
+            </li>
+            <li>
+                <a href="locationMethods.html">Location Methods</a>
+                <p class="description">Manage intersection between the locations and methods.</p>
+            </li>
+        </ul>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <script>
+        // Register a new user
+        function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (username && password) {
+                // Store the user information in localStorage
+                localStorage.setItem('username', username);
+                localStorage.setItem('password', password);
+                alert('Registration successful!');
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('main-container').style.display = 'block';
+            } else {
+                alert('Please enter both username and password to register.');
+            }
+        }
+
+        // Log in an existing user
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const storedUsername = localStorage.getItem('username');
+            const storedPassword = localStorage.getItem('password');
+
+            if (username === storedUsername && password === storedPassword) {
+                // If the credentials match, log the user in
+                alert('Login successful!');
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('main-container').style.display = 'block';
+            } else {
+                alert('Invalid username or password.');
+            }
+        }
+
+        // Log out the user
+        function logout() {
+            document.getElementById('main-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
+        }
+
+        // Check if user is already logged in
+        window.onload = function () {
+            if (localStorage.getItem('username') && localStorage.getItem('password')) {
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('main-container').style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>

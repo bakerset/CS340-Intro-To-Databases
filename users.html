@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users - Financial Travel Log</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        p {
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        form {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        input[type="number"], input[type="text"] {
+            padding: 8px;
+            margin: 8px;
+            width: 200px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        input[type="submit"], button {
+            padding: 10px 15px;
+            background-color: #007BFF; 
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover, button:hover {
+            background-color: #0056b3;
+        }
+
+        .delete-btn, .update-btn {
+            padding: 5px 10px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background-color: #ff4d4d;
+        }
+
+        .update-btn {
+            background-color: #28a745;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Users</h1>
+    <p>List of users with their budget information:</p>
+
+    <!-- Table of users -->
+    <table id="usersTable">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Full Name</th>
+                <th>Budget</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>James Bond</td>
+                <td>1500</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteUser(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Keanu Reeves</td>
+                <td>2000</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteUser(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Hannibal Lecter</td>
+                <td>1200</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteUser(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Form to Add or Update User -->
+    <form id="userForm">
+        <h3 id="formTitle">Add a New User</h3>
+        <input type="number" id="userID" placeholder="User ID" required>
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="number" id="userBudget" placeholder="Budget" required>
+        <input type="submit" value="Submit">
+    </form>
+
+    <a href="index.html">Back to Main Menu</a>
+
+    <script>
+        let updateMode = false;
+        let currentUserId = null;
+
+        // Fetch users and populate the table
+        async function fetchUsers() {
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/users');
+                const users = await response.json();
+                const usersTable = document.getElementById('usersTable').getElementsByTagName('tbody')[0];
+                usersTable.innerHTML = ''; // Clear current table data
+
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.userID}</td>
+                        <td>${user.userName}</td>
+                        <td>${user.userBudget}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteUser(${user.userID})">Delete</button>
+                            <button class="update-btn" onclick="prepareUpdate(${user.userID})">Update</button>
+                        </td>
+                    `;
+                    usersTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        }
+
+        // Delete a user
+        async function deleteUser(userID) {
+            try {
+                const response = await fetch(`http://classwork.engr.oregonstate.edu:12000/users/${userID}`, {
+                    method: 'DELETE',
+                });
+                if (response.ok) {
+                    alert('User deleted successfully!');
+                    fetchUsers(); // Refresh the user table
+                } else {
+                    alert('Failed to delete user');
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+            }
+        }
+
+        // Prepare form for updating a user
+        function prepareUpdate(userID) {
+            updateMode = true;
+            currentUserId = userID;
+            document.getElementById('formTitle').textContent = 'Update User Information';
+
+            fetch(`http://classwork.engr.oregonstate.edu:12000/users/${userID}`)
+                .then(response => response.json())
+                .then(user => {
+                    document.getElementById('userId').value = user.userID;
+                    document.getElementById('username').value = user.userName;
+                    document.getElementById('userBudget').value = user.userBudget;
+                });
+        }
+
+        // Handle form submit
+        async function handleFormSubmit(event) {
+            event.preventDefault(); // Prevent form submission
+
+            const userID = document.getElementById('userID').value;
+            const userName = document.getElementById('username').value;
+            const userBudget = document.getElementById('userBudget').value;
+
+            const payload = {
+                userID: userID,
+                userName,
+                userBudget
+            };
+
+            try {
+                const method = updateMode ? 'PUT' : 'POST';
+                const url = updateMode
+                    ? `http://classwork.engr.oregonstate.edu:12000/users/${userID}`
+                    : 'http://classwork.engr.oregonstate.edu:12000/users';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                    alert(updateMode ? 'User updated successfully!' : 'User added successfully!');
+                    fetchUsers(); // Refresh the user table
+                    resetForm(); // Reset form after submission
+                } else {
+                    console.error('Error saving user:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Reset form fields
+        function resetForm() {
+            updateMode = false;
+            currentUserId = null;
+            document.getElementById('userForm').reset();
+            document.getElementById('formTitle').textContent = 'Add a New User';
+        }
+
+        // Fetch users on page load
+        document.addEventListener('DOMContentLoaded', fetchUsers);
+
+        // Handle form submission
+        document.getElementById('userForm').addEventListener('submit', handleFormSubmit);
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Locations - Financial Travel Log</title>
+
+    <!-- Styling the page -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        p {
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        form {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            margin: 8px;
+            width: 200px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        input[type="submit"], button {
+            padding: 10px 15px;
+            background-color: #007BFF; 
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover, button:hover {
+            background-color: #0056b3;
+        }
+
+        .delete-btn, .update-btn {
+            padding: 5px 10px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background-color: #ff4d4d;
+        }
+
+        .update-btn {
+            background-color: #28a745;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Locations</h1>
+    <p>List of locations visited:</p>
+
+    <!-- Table to Display Locations -->
+    <table id="locationsTable">
+        <thead>
+            <tr>
+                <th>Location ID</th>
+                <th>Country</th>
+                <th>State</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>USA</td>
+                <td>CA</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteLocation(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>USA</td>
+                <td>NY</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteLocation(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>USA</td>
+                <td>OK</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteLocation(this)">Delete</button>
+                    <button class="update-btn" onclick="prepareUpdate(this)">Update</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Form to Add or Update Location -->
+    <form id="locationForm">
+        <h3 id="formTitle">Add a New Location</h3>
+        <input type="text" id="locationID" placeholder="Location ID" required>
+        <input type="text" id="countryTravel" placeholder="Country" required>
+        <input type="text" id="stateTravel" placeholder="State" required>
+        <input type="submit" value="Submit">
+    </form>
+
+    <!-- Back to Main Menu Link -->
+    <a href="index.html">Back to Main Menu</a>
+
+    <!-- JavaScript to Handle Form and Table Update -->
+    <script>
+        let updateMode = false;
+        let updateRow = null;
+
+        // Fetch and display locations from backend
+        async function fetchLocations() {
+            try {
+                const response = await fetch('http://classwork.engr.oregonstate.edu:12000/locations');
+                const locations = await response.json();
+                const locationsTable = document.getElementById('locationsTable').getElementsByTagName('tbody')[0];
+                locationsTable.innerHTML = ''; // Clear current table data
+
+                locations.forEach(location => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${location.locationID}</td>
+                        <td>${location.countryTravel}</td>
+                        <td>${location.stateTravel}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteLocation(${location.locationID})">Delete</button>
+                            <button class="update-btn" onclick="prepareUpdate(${location.locationID})">Update</button>
+                        </td>
+                    `;
+                    locationsTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching locations:', error);
+            }
+        }
+
+        async function deleteLocation(locationID) {
+            try {
+                const response = await fetch(`http://classwork.engr.oregonstate.edu:12000/locations/${locationID}`, {
+                    method: 'DELETE',
+                });
+                if (response.ok) {
+                    alert('Location deleted successfully!');
+                    fetchLocations(); // Refresh the table
+                } else {
+                    alert('Failed to delete location');
+                }
+            } catch (error) {
+                console.error('Error deleting location:', error);
+            }
+        }
+
+        function prepareUpdate(locationID) {
+            updateMode = true;
+            updateRow = locationID;
+            document.getElementById('formTitle').textContent = 'Update Location Information';
+
+            fetch(`http://classwork.engr.oregonstate.edu:12000/locations/${locationID}`)
+                .then(response => response.json())
+                .then(location => {
+                    document.getElementById('formTitle').textContent = 'Update Location';
+                    document.getElementById('locationID').value = location.locationID;
+                    document.getElementById('countryTravel').value = location.countryTravel;
+                    document.getElementById('stateTravel').value = location.stateTravel;
+                })
+                .catch(error => console.error('Error fetching location for update:', error));
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault(); // Prevent form submission
+
+            const locationID = document.getElementById('locationID').value;
+            const countryTravel = document.getElementById('countryTravel').value;
+            const stateTravel = document.getElementById('stateTravel').value;
+
+            const payload = {
+                locationID: locationID,
+                countryTravel: countryTravel,
+                stateTravel: stateTravel
+            };
+
+            try {
+            const method = updateMode ? 'PUT' : 'POST';
+            const url = updateMode
+                ? `http://classwork.engr.oregonstate.edu:12000/locations/${locationID}`
+                : 'http://classwork.engr.oregonstate.edu:12000/locations';
+
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                alert(updateMode ? 'Location updated successfully!' : 'Location added successfully!');
+                fetchLocations(); // Refresh the locations table
+                resetForm(); // Reset form after submission
+            } else {
+                console.error('Error saving location:', response.statusText);
+            }
+            } catch (error) {
+            console.error('Error:', error);
+            }
+        }
+
+        // Reset form fields
+        function resetForm() {
+            updateMode = false;
+            updateRow = null;
+            document.getElementById('locationForm').reset();
+            document.getElementById('formTitle').textContent = 'Add a New Location';
+        }
+
+        // Fetch locations on page load
+        document.addEventListener('DOMContentLoaded', fetchLocations);
+
+        // Handle form submission
+        document.getElementById('locationForm').addEventListener('submit', handleFormSubmit);
+    </script>
+</body>
+</html>
